@@ -33,9 +33,16 @@ impl Implementation for Element {
     namespace_definition: &TokenStream,
     prefix: &Option<String>,
     context: &XsdContext,
+
+    name_prefix: &Option<&str>,
   ) -> TokenStream {
+    let struct_name_string = (match *name_prefix {
+      Some(name) => name,
+      None => "",
+    }).to_owned() + &self.name;
+
     let struct_name = Ident::new(
-      &self.name.replace('.', "_").to_camel_case(),
+      &struct_name_string.replace('.', "_").to_camel_case(),
       Span::call_site(),
     );
 
@@ -59,7 +66,7 @@ impl Implementation for Element {
       let fields_definition = self
         .complex_type
         .iter()
-        .map(|complex_type| complex_type.get_field_implementation(context, prefix))
+        .map(|complex_type| complex_type.get_field_implementation(context, prefix, name_prefix))
         .collect();
 
       (fields_definition, quote!())
@@ -68,7 +75,7 @@ impl Implementation for Element {
     let docs = self
       .annotation
       .as_ref()
-      .map(|annotation| annotation.implement(namespace_definition, prefix, context))
+      .map(|annotation| annotation.implement(namespace_definition, prefix, context, name_prefix))
       .unwrap_or_else(TokenStream::new);
 
     quote! {
@@ -90,18 +97,22 @@ impl Element {
     namespace_definition: &TokenStream,
     prefix: &Option<String>,
     context: &XsdContext,
+
+    sub_types_name_prefix: &Option<&str>,
   ) -> TokenStream {
     if self.complex_type.is_none() {
       return quote!();
     }
 
-    self.implement(namespace_definition, prefix, context)
+    self.implement(namespace_definition, prefix, context, sub_types_name_prefix)
   }
 
   pub fn get_field_implementation(
     &self,
     context: &XsdContext,
     prefix: &Option<String>,
+
+    sub_type_name_prefix: &Option<&str>,
   ) -> TokenStream {
     if self.name.is_empty() {
       return quote!();
@@ -124,7 +135,7 @@ impl Element {
     let yaserde_rename = &self.name;
 
     let rust_type = if let Some(complex_type) = &self.complex_type {
-      complex_type.get_integrated_implementation(&self.name)
+      complex_type.get_integrated_implementation(&self.name, sub_type_name_prefix)
     } else if let Some(simple_type) = &self.simple_type {
       simple_type.get_type_implementation(context, &Some(self.name.to_owned()))
     } else if let Some(kind) = &self.kind {
@@ -192,7 +203,7 @@ mod tests {
       XsdContext::new(r#"<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"></xs:schema>"#)
         .unwrap();
 
-    let implementation = element.implement(&quote!(), &None, &context);
+    let implementation = element.implement(&quote!(), &None, &context, &None);
 
     let expected = TokenStream::from_str(&format!(
       r#"
@@ -229,7 +240,7 @@ mod tests {
       XsdContext::new(r#"<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"></xs:schema>"#)
         .unwrap();
 
-    let implementation = element.implement(&quote!(), &None, &context);
+    let implementation = element.implement(&quote!(), &None, &context, &None);
 
     let expected = TokenStream::from_str(&format!(
       r#"

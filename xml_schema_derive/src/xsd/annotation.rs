@@ -26,6 +26,8 @@ impl Implementation for Annotation {
     _namespace_definition: &TokenStream,
     _prefix: &Option<String>,
     _context: &XsdContext,
+
+    _sub_types_name_prefix: &Option<&str>,
   ) -> TokenStream {
     log::info!("Generate annotation");
 

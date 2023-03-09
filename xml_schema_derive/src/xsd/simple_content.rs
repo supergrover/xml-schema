@@ -14,10 +14,12 @@ impl Implementation for SimpleContent {
     namespace_definition: &TokenStream,
     prefix: &Option<String>,
     context: &XsdContext,
+
+    sub_types_name_prefix: &Option<&str>,
   ) -> TokenStream {
     self
       .extension
-      .implement(namespace_definition, prefix, context)
+      .implement(namespace_definition, prefix, context, sub_types_name_prefix)
   }
 }
 

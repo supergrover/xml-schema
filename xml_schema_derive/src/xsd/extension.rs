@@ -25,13 +25,15 @@ impl Implementation for Extension {
     namespace_definition: &TokenStream,
     prefix: &Option<String>,
     context: &XsdContext,
+
+    sub_types_name_prefix: &Option<&str>,
   ) -> TokenStream {
     let rust_type = RustTypesMapping::get(context, &self.base);
 
     let attributes: TokenStream = self
       .attributes
       .iter()
-      .map(|attribute| attribute.implement(namespace_definition, prefix, context))
+      .map(|attribute| attribute.implement(namespace_definition, prefix, context, sub_types_name_prefix))
       .collect();
 
     let inner_attribute = if format!("{rust_type}") == "String" {
@@ -76,7 +78,7 @@ mod tests {
       XsdContext::new(r#"<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"></xs:schema>"#)
         .unwrap();
 
-    let implementation = st.implement(&TokenStream::new(), &None, &context);
+    let implementation = st.implement(&TokenStream::new(), &None, &context, &None);
 
     let expected = TokenStream::from_str(
       r#"
@@ -118,7 +120,7 @@ mod tests {
       XsdContext::new(r#"<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"></xs:schema>"#)
         .unwrap();
 
-    let implementation = st.implement(&TokenStream::new(), &None, &context);
+    let implementation = st.implement(&TokenStream::new(), &None, &context, &None);
 
     let expected = TokenStream::from_str(
       r#"

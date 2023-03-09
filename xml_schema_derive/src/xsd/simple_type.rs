@@ -19,6 +19,8 @@ impl Implementation for SimpleType {
     namespace_definition: &TokenStream,
     prefix: &Option<String>,
     context: &XsdContext,
+
+    _sub_types_name_prefix: &Option<&str>,
   ) -> TokenStream {
     let struct_name = Ident::new(&self.name.to_camel_case(), Span::call_site());
 
@@ -72,7 +74,7 @@ mod tests {
       XsdContext::new(r#"<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"></xs:schema>"#)
         .unwrap();
 
-    let implementation = st.implement(&quote!(), &None, &context);
+    let implementation = st.implement(&quote!(), &None, &context, &None);
 
     let expected = TokenStream::from_str(&format!(
       r#"{DERIVES}

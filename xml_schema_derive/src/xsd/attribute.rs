@@ -48,6 +48,8 @@ impl Implementation for Attribute {
     _namespace_definition: &TokenStream,
     prefix: &Option<String>,
     context: &XsdContext,
+
+    _sub_types_name_prefix: &Option<&str>,
   ) -> TokenStream {
     if self.name.is_none() {
       return quote!();
@@ -117,7 +119,7 @@ mod tests {
       XsdContext::new(r#"<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"></xs:schema>"#)
         .unwrap();
 
-    let implementation = attribute.implement(&TokenStream::new(), &None, &context);
+    let implementation = attribute.implement(&TokenStream::new(), &None, &context, &None);
 
     let expected = TokenStream::from_str(
       r#"
@@ -144,7 +146,7 @@ mod tests {
       XsdContext::new(r#"<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"></xs:schema>"#)
         .unwrap();
 
-    let implementation = attribute.implement(&TokenStream::new(), &None, &context);
+    let implementation = attribute.implement(&TokenStream::new(), &None, &context, &None);
 
     let expected = TokenStream::from_str(
       r#"
@@ -171,7 +173,7 @@ mod tests {
       XsdContext::new(r#"<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"></xs:schema>"#)
         .unwrap();
 
-    let implementation = attribute.implement(&TokenStream::new(), &None, &context);
+    let implementation = attribute.implement(&TokenStream::new(), &None, &context, &None);
 
     let expected = TokenStream::from_str(
       r#"
@@ -198,7 +200,7 @@ mod tests {
       XsdContext::new(r#"<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"></xs:schema>"#)
         .unwrap();
 
-    let implementation = attribute.implement(&TokenStream::new(), &None, &context);
+    let implementation = attribute.implement(&TokenStream::new(), &None, &context, &None);
 
     let expected = TokenStream::from_str(
       r#"
@@ -226,7 +228,7 @@ mod tests {
       XsdContext::new(r#"<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"></xs:schema>"#)
         .unwrap();
 
-    attribute.implement(&TokenStream::new(), &None, &context);
+    attribute.implement(&TokenStream::new(), &None, &context, &None);
   }
 
   #[test]
@@ -244,7 +246,7 @@ mod tests {
         .unwrap();
 
     let implementation = attribute
-      .implement(&TokenStream::new(), &None, &context)
+      .implement(&TokenStream::new(), &None, &context, &None)
       .to_string();
     assert!(implementation.is_empty());
   }

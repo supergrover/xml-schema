@@ -37,6 +37,8 @@ impl Implementation for Schema {
     _namespace_definition: &TokenStream,
     target_prefix: &Option<String>,
     context: &XsdContext,
+
+    sub_types_name_prefix: &Option<&str>,
   ) -> TokenStream {
     let namespace_definition = generate_namespace_definition(target_prefix, &self.target_namespace);
 
@@ -44,21 +46,28 @@ impl Implementation for Schema {
     let elements: TokenStream = self
       .elements
       .iter()
-      .map(|element| element.implement(&namespace_definition, target_prefix, context))
+      .map(|element| element.implement(&namespace_definition, target_prefix, context, sub_types_name_prefix))
       .collect();
 
     log::info!("Generate simple types");
+    for simple_type in self.simple_type.iter() {
+      log::debug!("Simple type {name}", name = simple_type.name);
+    }
     let simple_types: TokenStream = self
       .simple_type
       .iter()
-      .map(|simple_type| simple_type.implement(&namespace_definition, target_prefix, context))
+      .map(|simple_type| simple_type.implement(&namespace_definition, target_prefix, context, sub_types_name_prefix))
       .collect();
 
     log::info!("Generate complex types");
+    for complex_type in self.complex_type.iter() {
+      log::debug!("Complex type {name}", name = complex_type.name);
+    }
+
     let complex_types: TokenStream = self
       .complex_type
       .iter()
-      .map(|complex_type| complex_type.implement(&namespace_definition, target_prefix, context))
+      .map(|complex_type| complex_type.implement(&namespace_definition, target_prefix, context, sub_types_name_prefix))
       .collect();
 
     quote!(
@@ -103,7 +112,7 @@ mod tests {
       XsdContext::new(r#"<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"></xs:schema>"#)
         .unwrap();
 
-    let implementation = format!("{}", schema.implement(&TokenStream::new(), &None, &context));
+    let implementation = format!("{}", schema.implement(&TokenStream::new(), &None, &context, &None));
     assert_eq!(implementation, "pub mod types { }");
   }
 
@@ -119,7 +128,7 @@ mod tests {
       XsdContext::new(r#"<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"></xs:schema>"#)
         .unwrap();
 
-    schema.implement(&TokenStream::new(), &None, &context);
+    schema.implement(&TokenStream::new(), &None, &context, &None);
   }
 
   #[test]
@@ -131,7 +140,7 @@ mod tests {
       XsdContext::new(r#"<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"></xs:schema>"#)
         .unwrap();
 
-    schema.implement(&TokenStream::new(), &Some("ex".to_string()), &context);
+    schema.implement(&TokenStream::new(), &Some("ex".to_string()), &context, &None);
   }
 
   #[test]

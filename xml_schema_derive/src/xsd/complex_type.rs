@@ -32,23 +32,29 @@ impl Implementation for ComplexType {
     namespace_definition: &TokenStream,
     prefix: &Option<String>,
     context: &XsdContext,
+
+    sub_types_name_prefix: &Option<&str>,
   ) -> TokenStream {
     let struct_name = Ident::new(
       &self.name.replace('.', "_").to_camel_case(),
       Span::call_site(),
     );
-    log::info!("Generate sequence");
+
+    let my_sub_types_name_prefix = match *sub_types_name_prefix {
+      Some(prefix) => prefix.to_owned() + self.name.as_str(),
+      None => self.name.to_owned(),
+    };
+
     let sequence = self
       .sequence
       .as_ref()
-      .map(|sequence| sequence.implement(namespace_definition, prefix, context))
+      .map(|sequence| sequence.implement(namespace_definition, prefix, context, &Some(&my_sub_types_name_prefix)))
       .unwrap_or_else(TokenStream::new);
 
-    log::info!("Generate simple content");
     let simple_content = self
       .simple_content
       .as_ref()
-      .map(|simple_content| simple_content.implement(namespace_definition, prefix, context))
+      .map(|simple_content| simple_content.implement(namespace_definition, prefix, context, sub_types_name_prefix))
       .unwrap_or_else(TokenStream::new);
 
     let complex_content = self
@@ -66,19 +72,19 @@ impl Implementation for ComplexType {
     let attributes: TokenStream = self
       .attributes
       .iter()
-      .map(|attribute| attribute.implement(namespace_definition, prefix, context))
+      .map(|attribute| attribute.implement(namespace_definition, prefix, context, sub_types_name_prefix))
       .collect();
 
     let sub_types_implementation = self
       .sequence
       .as_ref()
-      .map(|sequence| sequence.get_sub_types_implementation(context, namespace_definition, prefix))
+      .map(|sequence| sequence.get_sub_types_implementation(context, namespace_definition, prefix, &Some(&my_sub_types_name_prefix)))
       .unwrap_or_else(TokenStream::new);
 
     let docs = self
       .annotation
       .as_ref()
-      .map(|annotation| annotation.implement(namespace_definition, prefix, context))
+      .map(|annotation| annotation.implement(namespace_definition, prefix, context, sub_types_name_prefix))
       .unwrap_or_else(TokenStream::new);
 
     quote! {
@@ -103,12 +109,14 @@ impl ComplexType {
     &self,
     context: &XsdContext,
     prefix: &Option<String>,
+
+    sub_type_name_prefix: &Option<&str>
   ) -> TokenStream {
     if self.sequence.is_some() {
       self
         .sequence
         .as_ref()
-        .map(|sequence| sequence.get_field_implementation(context, prefix))
+        .map(|sequence| sequence.get_field_implementation(context, prefix, sub_type_name_prefix))
         .unwrap_or_else(TokenStream::new)
     } else {
       self
@@ -119,13 +127,25 @@ impl ComplexType {
     }
   }
 
-  pub fn get_integrated_implementation(&self, parent_name: &str) -> TokenStream {
+  pub fn get_integrated_implementation(
+    &self,
+    parent_name: &str,
+
+    sub_type_name_prefix: &Option<&str>
+  ) -> TokenStream {
     if self.simple_content.is_some() {
       return quote!(String);
     }
 
     if self.sequence.is_some() {
-      let list_wrapper = Ident::new(parent_name, Span::call_site());
+      let name = match *sub_type_name_prefix {
+        Some(name) => name.to_owned() + parent_name,
+        None => parent_name.to_owned(),
+      };
+
+      log::debug!("Get integrated implementation for {name} - {parent_name} - {sub_type_name_prefix}", name = self.name, sub_type_name_prefix = sub_type_name_prefix.unwrap_or("None"));
+
+      let list_wrapper = Ident::new(&name, Span::call_site());
       return quote!(#list_wrapper);
     }
 

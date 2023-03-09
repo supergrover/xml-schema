@@ -32,6 +32,7 @@ trait Implementation {
     _namespace_definition: &TokenStream,
     _prefix: &Option<String>,
     _context: &XsdContext,
+    _sub_types_name_prefix: &Option<&str>,
   ) -> TokenStream {
     unimplemented!()
   }
@@ -106,7 +107,7 @@ impl Xsd {
   pub fn implement(&self, target_prefix: &Option<String>) -> TokenStream {
     let schema = self
       .schema
-      .implement(&TokenStream::new(), target_prefix, &self.context);
+      .implement(&TokenStream::new(), target_prefix, &self.context, &None);
 
     let mod_name = format_ident!("{}", self.name.to_snake_case());
     let vis = &self.vis;

@@ -15,12 +15,13 @@ impl Implementation for Sequence {
     _namespace_definition: &TokenStream,
     prefix: &Option<String>,
     context: &XsdContext,
+    
+    sub_types_name_prefix: &Option<&str>,
   ) -> TokenStream {
-    info!("Generate elements");
     self
       .elements
       .iter()
-      .map(|element| element.get_field_implementation(context, prefix))
+      .map(|element| element.get_field_implementation(context, prefix, sub_types_name_prefix))
       .collect()
   }
 }
@@ -31,12 +32,13 @@ impl Sequence {
     context: &XsdContext,
     namespace_definition: &TokenStream,
     prefix: &Option<String>,
+
+    sub_types_name_prefix: &Option<&str>,
   ) -> TokenStream {
-    info!("Generate sub types implementation");
     self
       .elements
       .iter()
-      .map(|element| element.get_subtypes_implementation(namespace_definition, prefix, context))
+      .map(|element| element.get_subtypes_implementation(namespace_definition, prefix, context, sub_types_name_prefix))
       .collect()
   }
 
@@ -44,11 +46,13 @@ impl Sequence {
     &self,
     context: &XsdContext,
     prefix: &Option<String>,
+
+    sub_types_name_prefix: &Option<&str>,
   ) -> TokenStream {
     self
       .elements
       .iter()
-      .map(|element| element.get_field_implementation(context, prefix))
+      .map(|element| element.get_field_implementation(context, prefix, sub_types_name_prefix))
       .collect()
   }
 }
